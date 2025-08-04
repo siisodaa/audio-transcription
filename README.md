@@ -1,80 +1,63 @@
-Audio Transcription Service
+# Audio Transcription Service
 
-This project implements an audio transcription service for doctor-patient conversations. Clients submit jobs with audio chunks, and the system returns a stitched transcript.
+This project implements an audio transcription service that accepts jobs consisting of audio chunks and returns stitched transcripts. It is designed to simulate processing doctor-patient conversations using a mocked ASR service.
 
-Features
+## Features
 
-Submit transcription jobs via REST API
+- Submit transcription jobs via REST API  
+- Process audio chunks asynchronously using Redis queue  
+- Handle flaky ASR service with retries and backoff  
+- Enforce concurrency limit on ASR calls  
+- Persist jobs and chunk status in MongoDB  
+- Resume incomplete jobs on server restart  
+- Simple web frontend for job submission and transcript viewing  
 
-Process audio chunks asynchronously using a Redis queue
+## Tech Stack
 
-Handle flaky ASR service with retries and exponential backoff
+- **FastAPI** – REST API backend  
+- **Redis** – Queue for background processing  
+- **MongoDB** – Persistent storage  
+- **ASR Mock Service** – Simulated speech recognition  
+- **Bootstrap + Vanilla JS** – Frontend demo interface  
 
-Enforce concurrency limit on ASR requests
+## API Endpoints
 
-Persist jobs and chunks in MongoDB
+- `POST /transcript/transcribe` – Submit a new job  
+- `GET /transcript/{jobId}` – Retrieve transcript and job status  
+- `GET /transcript/search` – Search jobs by `userId` or `jobStatus`  
 
-Resume incomplete jobs on server restart
+## Job Flow
 
-Simple web frontend for submitting jobs and viewing transcripts
+1. Client submits job with `userId` and audio chunk paths  
+2. Job and chunk metadata stored in MongoDB  
+3. Each chunk is enqueued in Redis  
+4. Worker processes each chunk and retrieves transcript from ASR  
+5. Chunks are retried on failure (up to 3 times)  
+6. Transcript is stitched and job is marked completed  
+7. Client polls for job status or retrieves via `GET /transcript/{jobId}`  
 
-Tech Stack
+## Running the Project
 
-FastAPI – REST API backend
+1. Start **MongoDB** and **Redis**  
+2. Set environment variables in `.env`  
+3. Run the project using the provided script:  
+   ```bash
+   ./run.sh
+   ```  
+   This starts both the backend and the ASR worker.
 
-Redis – Job queue
+4. Open `frontend/index.html` in your browser to access the demo UI.
 
-MongoDB – Persistent storage
+## Setup
 
-ASR Mock Server – Simulated transcription service
+Install dependencies:
 
-Bootstrap + Vanilla JS – Frontend demo interface
-
-API Endpoints
-
-POST /transcript/transcribe – Submit a new transcription job
-
-GET /transcript/{jobId} – Fetch transcript and status
-
-GET /transcript/search – Search jobs by userId or jobStatus
-
-Job Lifecycle
-
-Client submits a job with userId and chunk paths
-
-Metadata saved in MongoDB
-
-Chunks enqueued in Redis
-
-Worker fetches chunks and sends them to ASR
-
-On success or retries exhausted, job is marked complete
-
-Transcript is stitched and saved
-
-Running the Project
-
-Ensure the following services are running:
-
-Redis
-
-MongoDB
-
-ASR mock server
-
-Start the backend and worker:
-
-./run.sh
-
-Open index.html in your browser to use the demo frontend
-
-Setup
-
-Install Python dependencies:
-
+```bash
 pip install -r requirements.txt
+```
 
-Create a .env file with your MongoDB connection string:
+## Notes
 
-MONGO_URI=mongodb://localhost:27017
-
+- The ASR service is simulated with latency and failure conditions  
+- Designed to complete transcript responses in under 20s in the happy case  
+- Can recover from process restarts and continue incomplete jobs  
